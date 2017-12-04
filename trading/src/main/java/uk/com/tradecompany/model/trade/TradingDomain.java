@@ -15,16 +15,16 @@ import uk.com.tradecompany.utils.DateUtils;
 
 public class TradingDomain  {
 	
-	protected BigDecimal agreedFx;
-	protected LocalDate instructionDate;
-	protected LocalDate settlementDate;
-	protected Long quantity;
-	protected BigDecimal priceUnity;
-	protected OperationType operation;
-	protected String currency;
-	protected String entity;
-	protected CurrencyTrader currencyTrader;
-	protected BigDecimal transactionAmount;
+	private BigDecimal agreedFx;
+	private LocalDate instructionDate;
+	private LocalDate settlementDate;
+	private Long quantity;
+	private BigDecimal priceUnity;
+	private OperationType operation;
+	private String currency;
+	private String entity;
+	private CurrencyTrader currencyTrader;
+	private BigDecimal transactionAmount;
 	
 	public TradingDomain(Double agreedFxRaw, String instructionDateRaw, String settlementDateRaw, Long quantity, Double priceUnityRaw, String operationRaw, String currency, String entity) throws ParseException, InvalidCurrencyValueException, InvalidOperationException, InvalidTradingValueException {
 		LocalDate instructionDate = DateUtils.stringToLocalDate(instructionDateRaw);

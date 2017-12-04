@@ -25,9 +25,64 @@ public class CurrencyTraderService {
 	}
 
 	public static void main(String[] args) {
-		CurrencyTraderService cts = new CurrencyTraderService();
-		cts.reportDataBase = ReportDataBase.getInstance();
+		CurrencyTraderService currencyTradeService = new CurrencyTraderService();
+		currencyTradeService.reportDataBase = ReportDataBase.getInstance();
 
+		initializeMockDate(currencyTradeService);
+		ArrayList<TradingDomain> tradingList = currencyTradeService.reportDataBase.getTradingList();
+		
+		currencyTradeService.insertDataIntoReportDataBase(tradingList);
+		
+		currencyTradeService.reportDataBase.printEntries();
+	}
+
+	public void insertDataIntoReportDataBase(ArrayList<TradingDomain> tradingList ) {
+		Set<String> entities = this.distinctEntities(tradingList);
+		Set<LocalDate> localDates = this.distinctDates(tradingList);
+		this.groupDataByEntity(entities, tradingList);
+		this.groupDataBySettlementDate(localDates, tradingList);
+	}
+
+	private Set<LocalDate> distinctDates(ArrayList<TradingDomain> tradingList) {
+		Set<LocalDate> localDates = new HashSet<>();
+		tradingList.forEach(trade -> localDates.add(trade.getSettlementDate()));
+		return localDates;
+	}
+
+	private Set<String> distinctEntities(ArrayList<TradingDomain> tradingList) {
+		Set<String> entities = new HashSet<>();
+		tradingList.forEach(trade -> entities.add(trade.getEntity()));
+		return entities;
+	}
+
+	private void groupDataBySettlementDate(Set<LocalDate> localDates, ArrayList<TradingDomain> tradingList) {
+		for (LocalDate distinctSettlementDate : localDates) {
+			
+			tradingList.stream().filter(trade -> trade.getSettlementDate().equals(distinctSettlementDate))
+					.filter(trade -> trade.getOperation().equals(OperationType.Buy))
+					.forEach(trade -> this.reportDataBase.addDailyIncoming(distinctSettlementDate,
+							trade.getTransactionAmount()));
+			
+			tradingList.stream().filter(trade -> trade.getSettlementDate().equals(distinctSettlementDate))
+			.filter(trade -> trade.getOperation().equals(OperationType.Sell))
+			.forEach(trade -> this.reportDataBase.addDailyOutcoming(distinctSettlementDate,
+					trade.getTransactionAmount()));
+		}
+	}
+
+	private void groupDataByEntity(Set<String> entities, ArrayList<TradingDomain> tradingList ) {
+		for (String distinctEntity : entities) {
+			tradingList.stream().filter(trade -> trade.getEntity().equals(distinctEntity))
+					.filter(trade -> trade.getOperation().equals(OperationType.Buy)).forEach(trade -> this.reportDataBase
+							.addIncomingPerEntity(distinctEntity, trade.getTransactionAmount()));
+			
+			tradingList.stream().filter(trade -> trade.getEntity().equals(distinctEntity))
+			.filter(trade -> trade.getOperation().equals(OperationType.Sell))
+			.forEach(trade -> this.reportDataBase.addOutcomingPerEntity(distinctEntity, trade.getTransactionAmount()));
+		}
+	}
+	
+	private static void initializeMockDate(CurrencyTraderService cts) {
 		Double agreedFx = 0.50;
 		String instructionDate = "01 Jan 2016";
 		String settlementDate = "02 Jan 2016";
@@ -107,41 +162,6 @@ public class CurrencyTraderService {
 		} catch (ParseException | InvalidCurrencyValueException | InvalidOperationException | InvalidTradingValueException e) {
 			e.printStackTrace();
 		}
-
-		Set<String> entities = new HashSet<>();
-		Set<LocalDate> localDates = new HashSet<>();
-		
-		ArrayList<TradingDomain> tradingList = cts.reportDataBase.getTradingList();
-		tradingList.forEach(trade -> entities.add(trade.getEntity()));
-		tradingList.forEach(trade -> localDates.add(trade.getSettlementDate()));
-		
-
-		for (String distinctEntity : entities) {
-			tradingList.stream().filter(trade -> trade.getEntity().equals(distinctEntity))
-					.filter(trade -> trade.getOperation().equals(OperationType.Buy)).forEach(trade -> cts.reportDataBase
-							.addIncomingPerEntity(distinctEntity, trade.getTransactionAmount()));
-			
-			tradingList.stream().filter(trade -> trade.getEntity().equals(distinctEntity))
-			.filter(trade -> trade.getOperation().equals(OperationType.Sell))
-			.forEach(trade -> cts.reportDataBase.addOutcomingPerEntity(distinctEntity,
-					trade.getTransactionAmount()));
-		}
-
-		for (LocalDate distinctSettlementDate : localDates) {
-			
-			tradingList.stream().filter(trade -> trade.getSettlementDate().equals(distinctSettlementDate))
-					.filter(trade -> trade.getOperation().equals(OperationType.Buy))
-					.forEach(trade -> cts.reportDataBase.addDailyIncoming(distinctSettlementDate,
-							trade.getTransactionAmount()));
-			
-			tradingList.stream().filter(trade -> trade.getSettlementDate().equals(distinctSettlementDate))
-			.filter(trade -> trade.getOperation().equals(OperationType.Sell))
-			.forEach(trade -> cts.reportDataBase.addDailyOutcoming(distinctSettlementDate,
-					trade.getTransactionAmount()));
-		}
-		
-		cts.reportDataBase.printEntries();
-
 	}
 
 }
